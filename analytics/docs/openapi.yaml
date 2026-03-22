@@ -1,0 +1,195 @@
+openapi: 3.0.3
+info:
+  title: Event Analytics API
+  version: "0.1.0"
+  description: API for ingesting events, managing event types, and querying analytics.
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/v1/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /api/v1/event-types:
+    post:
+      summary: Create an event type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventTypeCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/v1/events:
+    post:
+      summary: Track an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: List events
+      parameters:
+        - in: query
+          name: event
+          schema:
+            type: string
+        - in: query
+          name: user_id
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+  /api/v1/analytics:
+    get:
+      summary: Aggregate event count
+      parameters:
+        - in: query
+          name: event
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Aggregate result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregateResult"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+        event_name:
+          type: string
+        user_id:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+    EventTypeCreate:
+      type: object
+      required:
+        - event_name
+      properties:
+        event_name:
+          type: string
+        event_description:
+          type: string
+    TrackRequest:
+      type: object
+      required:
+        - event_name
+      properties:
+        event_name:
+          type: string
+        user_id:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+    AggregateResult:
+      type: object
+      properties:
+        event:
+          type: string
+        count:
+          type: integer
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

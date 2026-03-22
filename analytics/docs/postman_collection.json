@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Event Analytics API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "health"]
+        }
+      }
+    },
+    {
+      "name": "Create Event Type",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_name\": \"page_view\",\n  \"event_description\": \"Page view events\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/event-types",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "event-types"]
+        }
+      }
+    },
+    {
+      "name": "Track Event",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"event_name\": \"page_view\",\n  \"user_id\": \"user-1\",\n  \"properties\": { \"page\": \"/home\" }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/events",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "events"]
+        }
+      }
+    },
+    {
+      "name": "List Events",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/events?event=page_view",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "events"],
+          "query": [
+            { "key": "event", "value": "page_view" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Aggregate Events",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/analytics?event=page_view",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "analytics"],
+          "query": [
+            { "key": "event", "value": "page_view" }
+          ]
+        }
+      }
+    }
+  ]
+}
