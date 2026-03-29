@@ -1,104 +1,71 @@
-## Event Analytics Engine
+## 📊 Event Analytics Engine (Plug & Play)
 
-A lightweight Go service for ingesting events, registering event types, and querying basic analytics. The default storage is SQLite via GORM with migrations.
-
----
-
-## Quickstart
-
-```bash
-go run ./cmd
-```
-
-By default the API listens on `:8080` and uses `./data/analytics.db`. You can override:
-
-```bash
-set APP_ADDR=:8080
-set DB_PATH=.\data\analytics.db
-```
+A scalable, extensible event tracking system built in Go that lets you **ingest, process, and query events** with minimal setup — while allowing you to **swap out the database layer** to fit your stack.
 
 ---
 
-## Event Types (Required)
+## 🚀 Overview
 
-Events are validated against the `event_types` table. Create event types before tracking events:
+This project is a lightweight analytics engine designed for:
 
-```bash
-curl -X POST http://localhost:8080/api/v1/event-types \
-  -H "Content-Type: application/json" \
-  -d "{\"event_name\":\"page_view\",\"event_description\":\"Page view events\"}"
-```
+- High-volume event ingestion
+- Real-time + batch processing
+- Flexible storage backends
+- Easy integration into existing systems
 
----
-
-## Track an Event
-
-```bash
-curl -X POST http://localhost:8080/api/v1/events \
-  -H "Content-Type: application/json" \
-  -d "{\"event_name\":\"page_view\",\"user_id\":\"123\",\"properties\":{\"page\":\"/home\"}}"
-```
+You can clone this repo, plug in your preferred database, and start tracking events immediately using pre-defined schemas.
 
 ---
 
-## Get Analytics
+## ✨ Features
 
-```bash
-curl "http://localhost:8080/api/v1/analytics?event=page_view"
-```
-
----
-
-## API Docs
-
-- OpenAPI spec: `docs/openapi.yaml`
-- Postman collection: `docs/postman_collection.json`
-
-You can import the OpenAPI file into Swagger UI or Postman.
+- ⚡ High-performance event ingestion API
+- 🔌 Pluggable database layer (Postgres, ClickHouse, etc.)
+- 🧵 Built with Go concurrency (goroutines + channels)
+- 📦 Predefined event types (ready to use)
+- 📊 Basic analytics endpoints (counts, trends)
+- 🧱 Modular architecture (easy to extend)
+- 🔄 Async processing support (queue/worker model ready)
 
 ---
 
-## Configuration
+## 🧩 Predefined Events
 
-Environment variables:
+Out of the box, the system supports:
 
-- `APP_ADDR` (default `:8080`)
-- `DB_PATH` (default `./data/analytics.db`)
+- `user_signup`
+- `user_login`
+- `page_view`
+- `button_click`
+- `purchase`
+
+Each event follows a standard structure:
+
+```json
+{
+  "event_name": "page_view",
+  "user_id": "12345",
+  "timestamp": "2026-03-19T12:00:00Z",
+  "properties": {
+    "page": "/home",
+    "device": "mobile"
+  }
+}
+```
+
+You can extend or override these easily.
 
 ---
 
-## Project Structure
+## 🏗️ Architecture
 
 ```
-/cmd
-/internal
-  /api
-  /config
-  /domain
-  /events
-  /storage
+Client → API → Event Queue → Workers → Storage
+                         ↘ Cache (optional)
 ```
 
----
-
-## Testing
-
-```bash
-go test ./...
-```
-
-Benchmark:
-
-```bash
-go test -bench=BenchmarkServiceTrack ./internal/events
-```
-
----
-
-## Coming Soon (v2)
-
-The current implementation is synchronous and does not include goroutines, batching, or a queue/worker model yet. These are planned for v2:
-
-- Ingestion queue + worker pool
-- Batch inserts for higher throughput
-- Optional async processing toggle
+-> Workers , Event Queues
+-> Authentication
+-> Streaming
+-> Add cahcing for event names so they can check the isValid method from there without making a db call
+-> Funnels
