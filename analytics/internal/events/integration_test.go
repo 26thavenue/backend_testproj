@@ -10,7 +10,7 @@ import (
 	"github.com/26thavenue/backend_testproj/analytics/internal/events"
 	"github.com/26thavenue/backend_testproj/analytics/internal/storage"
 	"github.com/gofiber/fiber/v3"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/26thavenue/backend_testproj/analytics/internal/config"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
