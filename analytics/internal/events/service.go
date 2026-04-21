@@ -20,9 +20,10 @@ func NewService(repo Repository) *Service {
 type Repository interface {
 	Save(ctx context.Context, event domain.Event) error
 	FindAll(ctx context.Context, filter domain.Filter) ([]domain.Event, error)
-	Aggregate(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error)
+	Aggregate(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error)
 	EventTypeExists(ctx context.Context, name string) (bool, error)
 	CreateEventType(ctx context.Context, eventType domain.EventType) error
+	GetAllEventTypes(ctx context.Context) ([]domain.EventTypeWithCount, error)
 }
 
 func (s *Service) Track(ctx context.Context, req domain.TrackRequest) error {
@@ -48,20 +49,33 @@ func (s *Service) Track(ctx context.Context, req domain.TrackRequest) error {
 	return s.repo.Save(ctx, event)
 }
 
-func (s *Service) GetAnalytics(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error) {
-	eventName := strings.TrimSpace(query.EventName)
-	if eventName == "" {
-		return domain.AggregateResult{}, fmt.Errorf("event is required")
-	}
-	ok, err := s.repo.EventTypeExists(ctx, eventName)
-	if err != nil {
-		return domain.AggregateResult{}, err
-	}
-	if !ok {
-		return domain.AggregateResult{}, fmt.Errorf("unknown event type: %s", eventName)
+func (s *Service) GetAnalytics(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error) {
+	if len(query.EventNames) == 0 {
+		return nil, fmt.Errorf("at least one event is required")
 	}
 
-	query.EventName = eventName
+	var cleaned []string
+	for _, eventName := range query.EventNames {
+		eventName = strings.TrimSpace(eventName)
+		if eventName == "" {
+			continue
+		}
+		
+		ok, err := s.repo.EventTypeExists(ctx, eventName)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return nil, fmt.Errorf("unknown event type: %s", eventName)
+		}
+		cleaned = append(cleaned, eventName)
+	}
+	
+	if len(cleaned) == 0 {
+		return nil, fmt.Errorf("at least one valid event is required")
+	}
+
+	query.EventNames = cleaned
 	return s.repo.Aggregate(ctx, query)
 }
 
@@ -85,4 +99,8 @@ func (s *Service) CreateEventType(ctx context.Context, eventType domain.EventTyp
 
 	eventType.Name = name
 	return s.repo.CreateEventType(ctx, eventType)
+}
+
+func (s *Service) GetAllEventTypes(ctx context.Context) ([]domain.EventTypeWithCount, error) {
+	return s.repo.GetAllEventTypes(ctx)
 }

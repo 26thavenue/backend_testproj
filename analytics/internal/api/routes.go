@@ -18,6 +18,7 @@ func Register(app *fiber.App, eventsHandler *events.Handler) {
 	api.Post("/events", eventsHandler.Track)
 	api.Get("/events", eventsHandler.List)
 	api.Get("/analytics", eventsHandler.Aggregate)
+	api.Get("/event-types", eventsHandler.ListEventTypes)
 
 	// Swagger
 	api.Get("/swagger", swagger.Handler)

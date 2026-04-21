@@ -40,11 +40,13 @@ func (r *GormRepository) FindAll(ctx context.Context, filter domain.Filter) ([]d
 	return result, q.Find(&result).Error
 }
 
-func (r *GormRepository) Aggregate(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error) {
-	var count int64
+func (r *GormRepository) Aggregate(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error) {
+	var results []domain.AggregateResult
 
-	q := r.db.WithContext(ctx).Model(&domain.Event{}).
-		Where("name = ?", query.EventName)
+	q := r.db.WithContext(ctx).Table("events").
+		Select("name as event_name, count(id) as count").
+		Where("name IN ?", query.EventNames).
+		Group("name")
 
 	if !query.From.IsZero() {
 		q = q.Where("created_at >= ?", query.From)
@@ -53,16 +55,16 @@ func (r *GormRepository) Aggregate(ctx context.Context, query domain.AggregateQu
 		q = q.Where("created_at <= ?", query.To)
 	}
 
-	if err := q.Count(&count).Error; err != nil {
-		return domain.AggregateResult{}, err
+	if err := q.Scan(&results).Error; err != nil {
+		return nil, err
 	}
 
-	return domain.AggregateResult{
-		EventName: query.EventName,
-		Count:     count,
-		From:      query.From,
-		To:        query.To,
-	}, nil
+	for i := range results {
+		results[i].From = query.From
+		results[i].To = query.To
+	}
+
+	return results, nil
 }
 
 func (r *GormRepository) EventTypeExists(ctx context.Context, name string) (bool, error) {
@@ -79,3 +81,15 @@ func (r *GormRepository) EventTypeExists(ctx context.Context, name string) (bool
 func (r *GormRepository) CreateEventType(ctx context.Context, eventType domain.EventType) error {
 	return r.db.WithContext(ctx).Create(&eventType).Error
 }
+
+func (r *GormRepository) GetAllEventTypes(ctx context.Context) ([]domain.EventTypeWithCount, error) {
+	var result []domain.EventTypeWithCount
+	err := r.db.WithContext(ctx).
+		Table("event_types").
+		Select("event_types.*, count(events.id) as count").
+		Joins("left join events on events.name = event_types.name").
+		Group("event_types.id").
+		Scan(&result).Error
+	return result, err
+}
+

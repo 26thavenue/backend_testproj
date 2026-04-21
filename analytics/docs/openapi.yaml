@@ -17,6 +17,15 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
   /api/v1/event-types:
+    get:
+      summary: List all event types with counts
+      responses:
+        "200":
+          description: List of event types
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListEventTypesResponse"
     post:
       summary: Create an event type
       requestBody:
@@ -96,9 +105,12 @@ paths:
       parameters:
         - in: query
           name: event
+          description: Can be provided multiple times (e.g. ?event=signup&event=purchase)
           required: true
           schema:
-            type: string
+            type: array
+            items:
+              type: string
         - in: query
           name: from
           schema:
@@ -115,7 +127,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AggregateResult"
+                type: array
+                items:
+                  $ref: "#/components/schemas/AggregateResult"
         "400":
           description: Validation error
           content:
@@ -193,3 +207,24 @@ components:
       properties:
         error:
           type: string
+    EventTypeWithCount:
+      type: object
+      properties:
+        id:
+          type: integer
+        event_name:
+          type: string
+        event_description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        count:
+          type: integer
+    ListEventTypesResponse:
+      type: object
+      properties:
+        event_types:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventTypeWithCount"

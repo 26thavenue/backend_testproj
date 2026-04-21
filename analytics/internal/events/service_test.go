@@ -17,10 +17,11 @@ type stubRepo struct {
 	createCalls     int
 	saveErr         error
 	findAllResult   []domain.Event
-	aggregateResult domain.AggregateResult
+	aggregateResult []domain.AggregateResult
 	existsResult    bool
 	existsErr       error
 	createErr       error
+	eventTypes      []domain.EventTypeWithCount
 }
 
 func (s *stubRepo) Save(ctx context.Context, event domain.Event) error {
@@ -33,7 +34,7 @@ func (s *stubRepo) FindAll(ctx context.Context, filter domain.Filter) ([]domain.
 	return s.findAllResult, nil
 }
 
-func (s *stubRepo) Aggregate(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error) {
+func (s *stubRepo) Aggregate(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error) {
 	s.aggregateCalls++
 	return s.aggregateResult, nil
 }
@@ -46,6 +47,11 @@ func (s *stubRepo) EventTypeExists(ctx context.Context, name string) (bool, erro
 func (s *stubRepo) CreateEventType(ctx context.Context, eventType domain.EventType) error {
 	s.createCalls++
 	return s.createErr
+}
+
+func (s *stubRepo) GetAllEventTypes(ctx context.Context) ([]domain.EventTypeWithCount, error) {
+	s.findAllCalls++
+	return s.eventTypes, nil
 }
 
 func TestServiceTrack_ValidEvent(t *testing.T) {
@@ -93,24 +99,24 @@ func TestServiceTrack_RepoError(t *testing.T) {
 }
 
 func TestServiceGetAnalytics_Valid(t *testing.T) {
-	expected := domain.AggregateResult{
+	expected := []domain.AggregateResult{{
 		EventName: "page_view",
 		Count:     5,
 		From:      time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC),
 		To:        time.Date(2026, 3, 2, 0, 0, 0, 0, time.UTC),
-	}
+	}}
 	repo := &stubRepo{aggregateResult: expected, existsResult: true}
 	svc := NewService(repo)
 
 	result, err := svc.GetAnalytics(context.Background(), domain.AggregateQuery{
-		EventName: "page_view",
-		From:      expected.From,
-		To:        expected.To,
+		EventNames: []string{"page_view"},
+		From:       expected[0].From,
+		To:         expected[0].To,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if result.Count != expected.Count || result.EventName != expected.EventName {
+	if len(result) == 0 || result[0].Count != expected[0].Count || result[0].EventName != expected[0].EventName {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 	if repo.aggregateCalls != 1 {
@@ -123,7 +129,7 @@ func TestServiceGetAnalytics_InvalidEvent(t *testing.T) {
 	svc := NewService(repo)
 
 	_, err := svc.GetAnalytics(context.Background(), domain.AggregateQuery{
-		EventName: "unknown",
+		EventNames: []string{"unknown"},
 	})
 	if err == nil {
 		t.Fatalf("expected error, got nil")

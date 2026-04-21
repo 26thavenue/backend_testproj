@@ -63,8 +63,13 @@ func (h *Handler) List(c fiber.Ctx) error {
 }
 
 func (h *Handler) Aggregate(c fiber.Ctx) error {
-	eventName := strings.TrimSpace(c.Query("event"))
-	if eventName == "" {
+	args := c.Request().URI().QueryArgs().PeekMulti("event")
+	var eventNames []string
+	for _, arg := range args {
+		eventNames = append(eventNames, string(arg))
+	}
+
+	if len(eventNames) == 0 {
 		return writeError(c, fiber.StatusBadRequest, "event is required")
 	}
 
@@ -78,9 +83,9 @@ func (h *Handler) Aggregate(c fiber.Ctx) error {
 	}
 
 	result, err := h.service.GetAnalytics(c.Context(), domain.AggregateQuery{
-		EventName: eventName,
-		From:      from,
-		To:        to,
+		EventNames: eventNames,
+		From:       from,
+		To:         to,
 	})
 	if err != nil {
 		return writeError(c, fiber.StatusBadRequest, err.Error())
@@ -115,5 +120,16 @@ func parseTime(value string) (time.Time, error) {
 func writeError(c fiber.Ctx, status int, message string) error {
 	return c.Status(status).JSON(map[string]any{
 		"error": message,
+	})
+}
+
+func (h *Handler) ListEventTypes(c fiber.Ctx) error {
+	eventTypes, err := h.service.GetAllEventTypes(c.Context())
+	if err != nil {
+		return writeError(c, fiber.StatusInternalServerError, err.Error())
+	}
+
+	return c.JSON(domain.ListEventTypesResponse{
+		EventTypes: eventTypes,
 	})
 }

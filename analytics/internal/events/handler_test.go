@@ -15,9 +15,10 @@ import (
 type fakeRepo struct {
 	saveFn            func(ctx context.Context, event domain.Event) error
 	findAllFn         func(ctx context.Context, filter domain.Filter) ([]domain.Event, error)
-	aggregateFn       func(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error)
+	aggregateFn       func(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error)
 	eventTypeExistsFn func(ctx context.Context, name string) (bool, error)
 	createEventTypeFn func(ctx context.Context, eventType domain.EventType) error
+	getAllEventTypesFn func(ctx context.Context) ([]domain.EventTypeWithCount, error)
 }
 
 func (f *fakeRepo) Save(ctx context.Context, event domain.Event) error {
@@ -34,11 +35,11 @@ func (f *fakeRepo) FindAll(ctx context.Context, filter domain.Filter) ([]domain.
 	return nil, nil
 }
 
-func (f *fakeRepo) Aggregate(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error) {
+func (f *fakeRepo) Aggregate(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error) {
 	if f.aggregateFn != nil {
 		return f.aggregateFn(ctx, query)
 	}
-	return domain.AggregateResult{}, nil
+	return nil, nil
 }
 
 func (f *fakeRepo) EventTypeExists(ctx context.Context, name string) (bool, error) {
@@ -53,6 +54,13 @@ func (f *fakeRepo) CreateEventType(ctx context.Context, eventType domain.EventTy
 		return f.createEventTypeFn(ctx, eventType)
 	}
 	return nil
+}
+
+func (f *fakeRepo) GetAllEventTypes(ctx context.Context) ([]domain.EventTypeWithCount, error) {
+	if f.getAllEventTypesFn != nil {
+		return f.getAllEventTypesFn(ctx)
+	}
+	return nil, nil
 }
 
 func TestHandlerTrack_Valid(t *testing.T) {
@@ -124,13 +132,13 @@ func TestHandlerTrack_InvalidEvent(t *testing.T) {
 
 func TestHandlerAggregate(t *testing.T) {
 	repo := &fakeRepo{
-		aggregateFn: func(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error) {
-			return domain.AggregateResult{
-				EventName: query.EventName,
+		aggregateFn: func(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error) {
+			return []domain.AggregateResult{{
+				EventName: query.EventNames[0],
 				Count:     12,
 				From:      query.From,
 				To:        query.To,
-			}, nil
+			}}, nil
 		},
 		eventTypeExistsFn: func(ctx context.Context, name string) (bool, error) {
 			return true, nil
@@ -154,11 +162,11 @@ func TestHandlerAggregate(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", fiber.StatusOK, resp.StatusCode)
 	}
 
-	var result domain.AggregateResult
+	var result []domain.AggregateResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if result.Count != 12 || result.EventName != "page_view" {
+	if len(result) == 0 || result[0].Count != 12 || result[0].EventName != "page_view" {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 }

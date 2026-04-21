@@ -31,9 +31,9 @@ type Filter struct {
 }
 
 type AggregateQuery struct {
-	EventName string
-	From      time.Time
-	To        time.Time
+	EventNames []string
+	From       time.Time
+	To         time.Time
 }
 
 type AggregateResult struct {
@@ -41,4 +41,18 @@ type AggregateResult struct {
 	Count     int64     `json:"count"`
 	From      time.Time `json:"from,omitempty"`
 	To        time.Time `json:"to,omitempty"`
+}
+
+type EventTypeWithCount struct {
+	EventType
+	Count int64 `json:"count"`
+}
+
+type ListEventTypesResponse struct {
+	EventTypes []EventTypeWithCount `json:"event_types"`
+}
+
+type CreateEventTypeRequest struct {
+	Name        string `json:"event_name"`
+	Description string `json:"event_description"`
 }

@@ -65,12 +65,12 @@ func TestEventsIntegration(t *testing.T) {
 		t.Fatalf("expected %d, got %d", fiber.StatusOK, aggResp.StatusCode)
 	}
 
-	var agg domain.AggregateResult
+	var agg []domain.AggregateResult
 	if err := json.NewDecoder(aggResp.Body).Decode(&agg); err != nil {
 		t.Fatalf("decode aggregate response: %v", err)
 	}
-	if agg.Count != 1 {
-		t.Fatalf("expected count 1, got %d", agg.Count)
+	if len(agg) == 0 || agg[0].Count != 1 {
+		t.Fatalf("expected count 1, got %+v", agg)
 	}
 
 	listReq := httptest.NewRequest("GET", "/events?event=page_view", nil)

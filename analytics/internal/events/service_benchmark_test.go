@@ -17,8 +17,8 @@ func (n *noopRepo) FindAll(ctx context.Context, filter domain.Filter) ([]domain.
 	return nil, nil
 }
 
-func (n *noopRepo) Aggregate(ctx context.Context, query domain.AggregateQuery) (domain.AggregateResult, error) {
-	return domain.AggregateResult{}, nil
+func (n *noopRepo) Aggregate(ctx context.Context, query domain.AggregateQuery) ([]domain.AggregateResult, error) {
+	return nil, nil
 }
 
 func (n *noopRepo) EventTypeExists(ctx context.Context, name string) (bool, error) {
@@ -27,6 +27,10 @@ func (n *noopRepo) EventTypeExists(ctx context.Context, name string) (bool, erro
 
 func (n *noopRepo) CreateEventType(ctx context.Context, eventType domain.EventType) error {
 	return nil
+}
+
+func (n *noopRepo) GetAllEventTypes(ctx context.Context) ([]domain.EventTypeWithCount, error) {
+	return nil, nil
 }
 
 func BenchmarkServiceTrack(b *testing.B) {
