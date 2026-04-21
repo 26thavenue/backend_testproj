@@ -1,0 +1,4 @@
+- implement LRU cache with concurrency
+- build a web crawler
+- design LLM inference infra, KV cache management
+- reconstruct profiler traces from sampling profiler
